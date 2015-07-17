@@ -1,6 +1,8 @@
 # WanikaniKunren
 Training HTML application for Wanikani
 
+![](screenshot.png)
+
 # Usage
 First, put your API key into a file called `apikey`.
 
