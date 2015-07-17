@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Review</title>
+        <link href="style.css" rel="stylesheet" />
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <script src="jquery.min.js" type="text/javascript"></script>
+        <style>
+            body { width: 100%; height: 100%; background: #eee; }
+            #list { width: 80%; background: white; margin: 100px auto; padding: 100px; }
+            .item {
+                display: inline-block;
+                position: relative;
+                margin: 5px;
+                padding: 5px;
+                color: rgba(255, 255, 255, 0.5);
+                font-weight: bold;
+                font-size: 2em;
+                line-height: 3em;
+                width: auto;
+                min-width: 3em;
+                height: 3em;
+                cursor: pointer;
+                text-align: center;
+                text-shadow: 3px 3px 5px rgba(100, 100, 100, 0.5);
+            }
+            .kanji {
+                background: #FF7474;
+                border: 2px solid #963;
+            }
+            .radical {
+                background: #7474FF;
+                border: 2px solid #369;
+            }
+            .vocabulary {
+                background: #A000F1;
+                border: 2px solid #A066F1;
+            }
+            .meaning, .kunyomi, .onyomi, .kana {
+                display: none;
+            }
+            .item {
+                z-index: 1;
+            }
+            .item:hover {
+                z-index: 2;
+            }
+            
+            .item:hover .meaning, .item:hover .kunyomi, .item:hover .onyomi, .item:hover .kana {
+                display: block;
+                position: absolute;
+                left: 3em;
+                font-weight: normal;
+                line-height: 1em;
+                color: white;
+                white-space: nowrap;
+                background: rgba(255, 0, 0, 0.8);
+                padding: 0 1em;
+                font-weight: bold;
+            }
+            .item:hover .character {
+                display: inline;
+                font-weight: bold;
+                color: white !important;
+            }
+            .kanji:hover .meaning, .kanji:hover .kunyomi, .kanji:hover .onyomi, .kanji:hover .character {
+                background: rgba(255, 0, 0, 0.8);
+                box-shadow: 5px 5px 5px rgba(255, 0, 0, 0.8);
+            }
+            .radical:hover .meaning, .radical:hover .character {
+                background: rgba(0, 0, 255, 0.8);
+                box-shadow: 5px 5px 5px rgba(0, 0, 255, 0.8);
+            }
+            .vocabulary:hover .meaning, .vocabulary:hover .kana, .vocabulary:hover .character {
+                background: rgba(150, 0, 150, 0.8);
+                box-shadow: 5px 5px 5px rgba(150, 0, 150, 0.8);
+            }
+            
+            img.character {
+                width: 1em;
+                height: 1em;
+            }
+            .item:hover .meaning {   
+                top: 0px;
+            }
+            .item:hover .kunyomi {
+                top: 1em;
+            }
+            .item:hover .onyomi {
+                bottom: 0px;
+            }
+            .item .level {
+                display: block;
+                position: absolute;
+                top: 0px;
+                left: 0px;
+                color: rgba(255, 255, 255, 0.3);
+                font-size: 0.5em;
+                line-height: 0.5em;
+                padding-top: 5px;
+            }
+            .level-filter .item.selected {
+                opacity: 1.0;
+            }
+            .level-filter .item {
+                opacity: 0.3;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="list">
+        </div>
+        <script type="text/javascript">
+            var getUrlVar = (function(){
+                var vars = {};
+                window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+                    vars[key] = value;
+                });
+                return function(name){
+                    return vars[name];
+                };
+            })();
+            /**
+             * Randomize array element order in-place.
+             * Using Fisher-Yates shuffle algorithm.
+             */
+            function shuffleArray(array) {
+                for (var i = array.length - 1; i > 0; i--) {
+                    var j = Math.floor(Math.random() * (i + 1));
+                    var temp = array[i];
+                    array[i] = array[j];
+                    array[j] = temp;
+                }
+                return array;
+            }
+            function processData(type){
+                return function(content){
+                    var data = (content || {}).requested_information || [];
+                    if(data.general) data = data.general;
+                    var singleLevel = getUrlVar('level') || 0;
+                    if(data.length && data.forEach)
+                        shuffleArray(data).forEach(function(item){
+                        if(!item.user_specific) return; // no need to show it yet
+                        if(singleLevel && item.level != singleLevel) return; // we filter it out
+                        var $it = $('<div class="item"><span class="level" /><span class="character" /><span class="meaning" /><span class="kunyomi" /><span class="onyomi" /><span class="kana" /></div>').addClass(type);
+                        // character kanji
+                        if(item.character)
+                            $it.find('.character').text(item.character);
+                        else {
+                            $it.find('.character').remove();
+                            $('<img class="character" />').attr('src', item.image).prependTo($it);
+                        }
+                        // meaning
+                        $it.find('.meaning').text(item.meaning);
+                        // spelling
+                        $it.find('.kunyomi').text(item.kunyomi || '');
+                        $it.find('.onyomi').text(item.onyomi || '');
+                        $it.find('.kana').text(item.kana || '');
+                        // level
+                        $it.addClass('level' + item.level).data('level', item.level);
+                        $it.find('.level').text(item.level || '').hover(function(){
+                            var lvl = $(this).parent().data('level') || 0;
+                            $('.level' + lvl).addClass('selected');
+                            $('body').addClass('level-filter');
+                        }, function(){
+                            var lvl = $(this).parent().data('level') || 0;
+                            $('.level' + lvl).removeClass('selected');
+                            $('body').removeClass('level-filter');
+                        });
+                        
+                        $it.appendTo($('#list'));
+                    });
+                    else console.log('Invalid data: %o', content);
+                };
+            }
+            $(function(){
+                $.get('radicals.json', processData('radical'), 'json');
+                $.get('kanji.json', processData('kanji'), 'json');
+                $.get('vocabulary.json', processData('vocabulary'), 'json');
+            });
+        </script>
+    </body>
+</html>
