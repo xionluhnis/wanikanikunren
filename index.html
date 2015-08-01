@@ -138,39 +138,44 @@
                     var data = (content || {}).requested_information || [];
                     if(data.general) data = data.general;
                     var singleLevel = getUrlVar('level') || 0;
-                    if(data.length && data.forEach)
-                        shuffleArray(data).forEach(function(item){
-                        if(!item.user_specific) return; // no need to show it yet
-                        if(singleLevel && item.level != singleLevel) return; // we filter it out
-                        var $it = $('<div class="item"><span class="level" /><span class="character" /><span class="meaning" /><span class="kunyomi" /><span class="onyomi" /><span class="kana" /></div>').addClass(type);
-                        // character kanji
-                        if(item.character)
-                            $it.find('.character').text(item.character);
-                        else {
-                            $it.find('.character').remove();
-                            $('<img class="character" />').attr('src', item.image).prependTo($it);
-                        }
-                        // meaning
-                        $it.find('.meaning').text(item.meaning);
-                        // spelling
-                        $it.find('.kunyomi').text(item.kunyomi || '');
-                        $it.find('.onyomi').text(item.onyomi || '');
-                        $it.find('.kana').text(item.kana || '');
-                        // level
-                        $it.addClass('level' + item.level).data('level', item.level);
-                        $it.find('.level').text(item.level || '').hover(function(){
-                            var lvl = $(this).parent().data('level') || 0;
-                            $('.level' + lvl).addClass('selected');
-                            $('body').addClass('level-filter');
-                        }, function(){
-                            var lvl = $(this).parent().data('level') || 0;
-                            $('.level' + lvl).removeClass('selected');
-                            $('body').removeClass('level-filter');
+                    var order = getUrlVar('order') || null;
+                    if(data.length && data.forEach){
+                        data = data.filter(function(item){ return !!item.user_specific; });
+                        data = order && order in data[0].user_specific ? data.sort(function(a, b){ return a.user_specific[order] - b.user_specific[order]; }) : shuffleArray(data);
+                        data.forEach(function(item){
+                            if(!item.user_specific) return; // no need to show it yet
+                            if(singleLevel && item.level != singleLevel) return; // we filter it out
+                            var $it = $('<div class="item"><span class="level" /><span class="character" /><span class="meaning" /><span class="kunyomi" /><span class="onyomi" /><span class="kana" /></div>').addClass(type);
+                            // character kanji
+                            if(item.character)
+                                $it.find('.character').text(item.character);
+                            else {
+                                $it.find('.character').remove();
+                                $('<img class="character" />').attr('src', item.image).prependTo($it);
+                            }
+                            // meaning
+                            $it.find('.meaning').text(item.meaning);
+                            // spelling
+                            $it.find('.kunyomi').text(item.kunyomi || '');
+                            $it.find('.onyomi').text(item.onyomi || '');
+                            $it.find('.kana').text(item.kana || '');
+                            // level
+                            $it.addClass('level' + item.level).data('level', item.level);
+                            $it.find('.level').text(item.level || '').hover(function(){
+                                var lvl = $(this).parent().data('level') || 0;
+                                $('.level' + lvl).addClass('selected');
+                                $('body').addClass('level-filter');
+                            }, function(){
+                                var lvl = $(this).parent().data('level') || 0;
+                                $('.level' + lvl).removeClass('selected');
+                                $('body').removeClass('level-filter');
+                            });
+                            
+                            $it.appendTo($('#list'));
                         });
-                        
-                        $it.appendTo($('#list'));
-                    });
-                    else console.log('Invalid data: %o', content);
+                    }else{
+                        console.log('Invalid data: %o', content);
+                    }
                 };
             }
             $(function(){
